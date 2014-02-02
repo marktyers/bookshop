@@ -1,41 +1,64 @@
-var mysql = require('mysql')
+var http = require('http')
+var fs = require('fs')
+var sqlite3 = require('sqlite3')
+var request = require('request')
 
-var connection = mysql.createConnection({
-        host     : 'localhost',
-        user     : 'webuser',
-        password : 'xxxxxxxx'
-});
+// curl -i -H "Accept: application/json" -X PUT -d "genre=7" http://localhost:3000/book/12345
+
+exports.putISBN = function(req, res) {
+    var fullURL = req.protocol + "://" + req.get('host') + req.url
     
-connection.connect();
-connection.query('use bookshop');
+    var isbn = req.params.isbn
+    var genreid = req.body.genre
+    try {
+        if (typeof(isbn) == 'undefined') throw('Missing ISBN in URI');
+        if (typeof(genreid) == 'undefined') throw('Missing genre in request body');
+        if (isNaN(isbn)) throw('isbn should be a numerical value')
+        if (isNaN(genreid)) throw('genre should be a numerical value')
+        isbn = parseInt(isbn)
+        genreid = parseInt(genreid)
+    } catch(e) {
+        res.send({status:'failure', message: e, fullURL: fullURL, genre: genreid})
+        res.end()
+    }
+    url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:'+isbn
+    request(url, function(err, resp, body) {
+        try {
+            body = JSON.parse(body)
+            var items = body.totalItems
+            if (items == 0) throw('Invalid ISBN number')
+            var book = body.items[0]
+            var title = book.volumeInfo.title
+            var author = book.volumeInfo.authors[0]
+            var description = book.volumeInfo.description
+            var year = parseInt(book.volumeInfo.publishedDate)
+            var database = new sqlite3.Database("data/bookshop.sqlite")
+            var sql = 'INSERT INTO books(isbn, title, author, description, year, genreid) VALUES('+isbn+', "'+title+'", "'+author+'", "'+description+'", '+year+', '+genreid+');';
+            database.run(sql, function(err, rows) {
+                if (err) {
+                    res.send({status:'failure', message: 'Book already exists'})
+                    res.end();
+                }
+                var url = 'http://covers.openlibrary.org/b/isbn/'+isbn+'-L.jpg'
+                console.log(url)
+                request(url).pipe(fs.createWriteStream('covers/'+isbn+'.jpg'));
+                var imgURL = req.protocol + "://" + req.get('host')+'/covers/'+isbn+'.jpg'
 
-exports.getAll = function(req, res) {
-	connection.query('SELECT isbn, title FROM books;', function(err, rows, fields) {
-  		if (err) throw err;
-		console.log('The books are: \n', rows);
-		var selfLink = '';
-		res.send([{status: 'success', books: rows}]);
-	});
-};
-
-exports.headISBN = function(req,res) {
-	res.close();
+                res.send({status:'success', selflink:fullURL, book:{isbn:isbn, title:title, author:author, cover:imgURL, year:year, genreid:genreid}})
+            })
+        } catch(e) {
+            res.send({status:'failure', message: e, selfLink: fullURL, genreid: genreid})
+            res.end()
+        }
+    })
+    
+    //res.send({status:'success', selfLink:fullURL, isbn:isbn, genre:genre})
+    //var database = new sqlite3.Database("data/bookshop.sqlite");
+    //var sql = 'SELECT id, title FROM genres;';
+    //var genres = []
+    //database.all(sql, function(err, rows) {
+    //    res.send({status:'success', selfLink:fullURL, genres:rows})
+    //    res.end()
+    //    database.close()
+    //})
 }
-
-// http://192.168.1.63/book/isbn/9781449397227
-// curl -v -# http://192.168.1.63/book/isbn/9781449397227 | prettyjson
-exports.getISBN = function(req, res) {
-	var sql = 'SELECT isbn, title, author, CAST(date_format(published, "%Y") AS UNSIGNED) AS published, cover as thumbnail, concat("http://192.168.1.63/book/isbn/",isbn) AS selfLink FROM books WHERE isbn='+req.params.isbn+';';
-	console.log(sql);
-	connection.query(sql, function(err, rows, fields) {
-		if (err) {
-  			res.statusCode = 400;
-  			res.send({status: 'failure', error: {code: 31, text: err}});
-  		}
-  		console.log('The book is: \n', rows[0]);
-  		var selfLink = 'http://192.168.1.63/book/isbn/'+req.params.isbn;
-		res.statusCode = 200;
-		res.send({status: 'success', selfLink: selfLink, book: rows[0]});
-	});
-    //res.send({id: req.params.id, name: "Book Name", description: "Description"});
-};
