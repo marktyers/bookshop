@@ -3,6 +3,12 @@ var fs = require('fs')
 var sqlite3 = require('sqlite3')
 var request = require('request')
 
+exports.getISBN = function(req, res) {
+    var fullURL = req.protocol + "://" + req.get('host') + req.url
+    var isbn = req.params.isbn
+    res.send({status:'success', selfLink:fullURL, isbn:isbn, isbn:isbn})
+}
+
 // curl -i -H "Accept: application/json" -X PUT -d "genre=7" http://localhost:3000/book/12345
 
 exports.putISBN = function(req, res) {
