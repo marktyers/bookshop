@@ -1,70 +1,56 @@
-var http = require('http')
-var fs = require('fs')
-var sqlite3 = require('sqlite3')
+// books.js //
 var request = require('request')
+var restify = require('restify')
 
-exports.getISBN = function(req, res) {
-    var fullURL = req.protocol + "://" + req.get('host') + req.url
-    var isbn = req.params.isbn
-    res.send({status:'success', selfLink:fullURL, isbn:isbn, isbn:isbn})
-}
-
-// curl -i -H "Accept: application/json" -X PUT -d "genre=7" http://localhost:3000/book/12345
-
-exports.putISBN = function(req, res) {
-    var fullURL = req.protocol + "://" + req.get('host') + req.url
-    
-    var isbn = req.params.isbn
-    var genreid = req.body.genre
-    try {
-        if (typeof(isbn) == 'undefined') throw('Missing ISBN in URI');
-        if (typeof(genreid) == 'undefined') throw('Missing genre in request body');
-        if (isNaN(isbn)) throw('isbn should be a numerical value')
-        if (isNaN(genreid)) throw('genre should be a numerical value')
-        isbn = parseInt(isbn)
-        genreid = parseInt(genreid)
-    } catch(e) {
-        res.send({status:'failure', message: e, fullURL: fullURL, genre: genreid})
-        res.end()
+exports.addBook = function(req, res, next) {
+    if (req.params.isbn.length != 13) {
+        return next(new restify.InvalidArgumentError("ISBN13 should be a 13 digit number"))
     }
-    url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:'+isbn
-    request(url, function(err, resp, body) {
-        try {
-            body = JSON.parse(body)
-            var items = body.totalItems
-            if (items == 0) throw('Invalid ISBN number')
-            var book = body.items[0]
-            var title = book.volumeInfo.title
-            var author = book.volumeInfo.authors[0]
-            var description = book.volumeInfo.description
-            var year = parseInt(book.volumeInfo.publishedDate)
-            var database = new sqlite3.Database("data/bookshop.sqlite")
-            var sql = 'INSERT INTO books(isbn, title, author, description, year, genreid) VALUES('+isbn+', "'+title+'", "'+author+'", "'+description+'", '+year+', '+genreid+');';
-            database.run(sql, function(err, rows) {
-                if (err) {
-                    res.send({status:'failure', message: 'Book already exists'})
-                    res.end();
-                }
-                var url = 'http://covers.openlibrary.org/b/isbn/'+isbn+'-L.jpg'
-                console.log(url)
-                request(url).pipe(fs.createWriteStream('covers/'+isbn+'.jpg'));
-                var imgURL = req.protocol + "://" + req.get('host')+'/covers/'+isbn+'.jpg'
-
-                res.send({status:'success', selflink:fullURL, book:{isbn:isbn, title:title, author:author, cover:imgURL, year:year, genreid:genreid}})
-            })
-        } catch(e) {
-            res.send({status:'failure', message: e, selfLink: fullURL, genreid: genreid})
-            res.end()
+    var isbn = parseInt(req.params.isbn)
+    if (isNaN(isbn)) {
+        return next(new restify.InvalidArgumentError("ISBN should only contain numeric characters"))
+    }
+    if (req.params.keywords != undefined) {
+        var keywords = req.params.keywords.split(',')
+        for (var i=0; i<keywords.length; i++) keywords[i] = keywords[i].trim()
+    }
+    
+    var uri = 'https://www.googleapis.com/books/v1/volumes?q=isbn:'+req.params.isbn;
+    console.log(uri)
+    
+    request(uri, function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var top = JSON.parse(body)
+            console.log(body)
+            if (top.totalItems == 0) {
+                return next(new restify.InvalidArgumentError("Invalid ISBN supplied"))
+            }
+            var kind = top.kind
+            var item = top.items[0]
+            var book = item.volumeInfo
+            var title = book.title
+            var author = book.authors[0]
+            var publisher = book.publisher.replace(/\"/gi, '')
+            var published = book.publishedDate.split('-')
+            var description = book.description
+            var categories = book.categories
+            var response = {
+                title:title,
+                isbn:isbn,
+                keywords:keywords,
+                categories:categories,
+                author:author,
+                publisher:publisher,
+                published:parseInt(published[0]),
+                description:description
+            }
+            res.setHeader('Content-Type', 'application/json')
+            //res.end(body)
+            res.end(JSON.stringify(response))
         }
     })
     
-    //res.send({status:'success', selfLink:fullURL, isbn:isbn, genre:genre})
-    //var database = new sqlite3.Database("data/bookshop.sqlite");
-    //var sql = 'SELECT id, title FROM genres;';
-    //var genres = []
-    //database.all(sql, function(err, rows) {
-    //    res.send({status:'success', selfLink:fullURL, genres:rows})
-    //    res.end()
-    //    database.close()
-    //})
+    //var response = {isbn:isbn, genre:genre}
+    //res.setHeader('Content-Type', 'application/json')
+    //res.end(JSON.stringify(response))
 }

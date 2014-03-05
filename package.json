@@ -1,0 +1,21 @@
+{
+  "name": "couchdb",
+  "version": "0.0.1",
+  "description": "Simple CouchDB/NodeJS test.",
+  "main": "server.js",
+  "dependencies": {
+    "restify": "~2.6.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "nodejs",
+    "couchdb",
+    "api"
+  ],
+  "author": "Mark J Tyers",
+  "license": "ISC"
+}
