@@ -21,7 +21,7 @@ exports.addBook = function(req, res, next) {
     request(uri, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             var top = JSON.parse(body)
-            console.log(body)
+            //console.log(body)
             if (top.totalItems == 0) {
                 return next(new restify.InvalidArgumentError("Invalid ISBN supplied"))
             }
@@ -44,13 +44,24 @@ exports.addBook = function(req, res, next) {
                 published:parseInt(published[0]),
                 description:description
             }
-            res.setHeader('Content-Type', 'application/json')
-            //res.end(body)
-            res.end(JSON.stringify(response))
+            
+            var uri2 = 'http://127.0.0.1:5984/bookshop/'+isbn
+            
+            var params = {
+                method: 'PUT',
+                uri:uri2,
+                body: JSON.stringify(response)
+            }
+            
+            request(params, function (error, response, body) {
+                console.log(body)
+                var top = JSON.parse(body)
+                if (top.error == 'conflict') {
+                    return next(new restify.InvalidContentError("Book '"+title+"' already exists"))
+                }
+                res.setHeader('Content-Type', 'application/json')
+                res.end(JSON.stringify({code:'success', message:"Book '"+title+"' added"}))
+            })
         }
     })
-    
-    //var response = {isbn:isbn, genre:genre}
-    //res.setHeader('Content-Type', 'application/json')
-    //res.end(JSON.stringify(response))
 }
