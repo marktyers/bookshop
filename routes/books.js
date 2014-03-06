@@ -12,7 +12,7 @@ exports.addBook = function(req, res, next) {
     }
     if (req.params.keywords != undefined) {
         var keywords = req.params.keywords.split(',')
-        for (var i=0; i<keywords.length; i++) keywords[i] = keywords[i].trim()
+        for (var i=0; i<keywords.length; i++) keywords[i] = keywords[i].trim().toLowerCase()
     }
     
     var uri = 'https://www.googleapis.com/books/v1/volumes?q=isbn:'+req.params.isbn;
