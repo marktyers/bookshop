@@ -7,3 +7,5 @@ List of ISBN Numbers for Testing API
 9781449340049	MongoDB Applied Design Patterns
 9781449311520	Hadoop: The Definitive Guide
 9781449323073	Learning Node
+9780586010808   Foundation
+9781841593593   Brave New World

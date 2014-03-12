@@ -17,7 +17,7 @@
         var genre = parseInt(req.params.genre)
         var response = {authorization:auth, isbn:isbn, genre:genre}
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify(response))
+        res.end(JSON.stringify(response.headers))
     })
 
     server.listen(8080)
