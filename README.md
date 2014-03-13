@@ -4,6 +4,11 @@ bookshop
 Simple web service to teach RESTful web service development.
  This has been developed using NodeJS and is aimed at showing how to use this platform.
  
+Documentation
+-------------
+Draft documentation can be found at:
+https://docs.google.com/document/d/14hPXA3ao9VDDwPdIe3oQrJntjEUtQepnghlzOzgTTnc/edit
+ 
 installation
 ------------
 Make sure you have installed nodejs and couchdb (compile from source-latest)
