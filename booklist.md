@@ -9,3 +9,6 @@ List of ISBN Numbers for Testing API
 9781449323073	Learning Node
 9780586010808   Foundation
 9781841593593   Brave New World
+9780713999341   The Great Sea
+9781856197212   Albion
+9780951183526   The Art of Creative Thinking

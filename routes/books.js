@@ -40,6 +40,7 @@ function getBook(isbn, keywords, res, next) {
             var description = book.description
             var categories = book.categories
             var record = {
+                type:"book",
                 title:title,
                 isbn:isbn,
                 keywords:keywords,
@@ -81,7 +82,7 @@ function insertBook(isbn, record, res, next) {
             //return next(new restify.InvalidContentError("Book '"+record.title+"' already exists"))
         }
         res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({code:'success', message:"Book '"+record.title+"' added"}))
+        res.end(JSON.stringify({code:'success', message:"Book '"+record.title+"' added", details:record}))
     })
 }
 

@@ -5,8 +5,10 @@
     server.use(restify.authorizationParser())
     
     book = require('./routes/books')
+    user = require('./routes/users')
     
     server.put('/book/:isbn', book.addBook)
+    server.put('/user/:username', user.addUser)
 
     server.post('/book/:isbn', function(req, res) {
         var auth = req.authorization
