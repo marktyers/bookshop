@@ -3,6 +3,7 @@
 var request = require('request')
 var restify = require('restify')
 var merge = require('merge')
+var md5 = require('MD5')
 
 /*
     Function: getBook
@@ -25,7 +26,7 @@ function getBook(isbn, keywords, res, next) {
     request(uri, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             var top = JSON.parse(body)
-            console.log(body)
+            //console.log(body)
             if (top.totalItems == 0) {
                 return next(new restify.InvalidArgumentError("Invalid ISBN supplied"))
             }
@@ -113,19 +114,46 @@ function updateBook(isbn, record, res, next) {
     })
 }
 
+function checkAuth(req, res, next) {
+    console.log("\n### AUTHENTICATING USER ###")
+    var authData = req.authorization
+    console.log(authData)
+    if (authData.scheme != 'Basic') {
+        return next(new restify.InvalidCredentialsError("No authorization header found (Requires HTTP Basic)"))
+    }
+    if (authData.basic.username == undefined || authData.basic.password == undefined) {
+        return next(new restify.InvalidCredentialsError("Invalid authorization header (Requires HTTP Basic)"))
+    }
+    uri = 'http://127.0.0.1:5984/bookshop/'+authData.basic.username
+    console.log(uri)
+    request({method: 'GET', uri:uri}, function (error, response, body) {
+        console.log(body)
+        var top = JSON.parse(body)
+        console.log(top.error)
+        if (top.error == 'not_found') { // username does not exist in the database
+            console.log('INVALID CREDENTIALS')
+            return next(new restify.InvalidCredentialsError("Invalid username or password"))
+        }
+        if (top.password != md5(authData.basic.password)) {
+            return next(new restify.InvalidCredentialsError("Invalid username or password"))
+        }
+        if (req.params.isbn.length != 13) {
+            return next(new restify.InvalidArgumentError("ISBN13 should be a 13 digit number"))
+        }
+        var isbn = parseInt(req.params.isbn)
+        if (isNaN(isbn)) {
+            return next(new restify.InvalidArgumentError("ISBN should only contain numeric characters"))
+        }
+        if (req.params.keywords != undefined) {
+            var keywords = req.params.keywords.split(',')
+            for (var i=0; i<keywords.length; i++) keywords[i] = keywords[i].trim().toLowerCase()
+        } else {
+            var keywords = null
+        }
+        getBook(isbn, keywords, res, next)
+    })
+}
+
 exports.addBook = function(req, res, next) {
-    if (req.params.isbn.length != 13) {
-        return next(new restify.InvalidArgumentError("ISBN13 should be a 13 digit number"))
-    }
-    var isbn = parseInt(req.params.isbn)
-    if (isNaN(isbn)) {
-        return next(new restify.InvalidArgumentError("ISBN should only contain numeric characters"))
-    }
-    if (req.params.keywords != undefined) {
-        var keywords = req.params.keywords.split(',')
-        for (var i=0; i<keywords.length; i++) keywords[i] = keywords[i].trim().toLowerCase()
-    } else {
-        var keywords = null
-    }
-    getBook(isbn, keywords, res, next)
+    checkAuth(req, res, next)
 }

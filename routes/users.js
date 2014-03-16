@@ -24,9 +24,11 @@ exports.addUser = function(req, res, next) {
 
 function insertUser(record, res, next) {
     console.log("\n### INSERT USERNAME ###")
+    console.log(record)
     uri = 'http://127.0.0.1:5984/bookshop/'+record.username
     console.log(uri)
     request({method: 'PUT', uri:uri, body: JSON.stringify(record)}, function (error, response, body) {
+        console.log(body)
         var top = JSON.parse(body)
         if (top.error == 'conflict') {
             console.log('username already exists')
