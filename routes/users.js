@@ -39,3 +39,38 @@ function insertUser(record, res, next) {
         res.end(JSON.stringify({code:'success', message:"Username '"+record.username+"' added", details:record}))
     })
 }
+
+exports.getUser = function(req, res, next) {
+    if (req.params.username == undefined) {
+        console.log('Missing username in URI')
+    }
+    checkAuth(req, res, next)
+}
+
+function checkAuth(req, res, next) {
+    console.log("\n### AUTHENTICATING USER ###")
+    var authData = req.authorization
+    console.log(authData)
+    if (authData.scheme != 'Basic') {
+        return next(new restify.InvalidCredentialsError("No authorization header found (Requires HTTP Basic)"))
+    }
+    if (authData.basic.username == undefined || authData.basic.password == undefined) {
+        return next(new restify.InvalidCredentialsError("Invalid authorization header (Requires HTTP Basic)"))
+    }
+    uri = 'http://127.0.0.1:5984/bookshop/'+authData.basic.username
+    console.log(uri)
+    request({method: 'GET', uri:uri}, function (error, response, body) {
+        console.log(body)
+        var top = JSON.parse(body)
+        console.log(top.error)
+        if (top.error == 'not_found') { // username does not exist in the database
+            console.log('INVALID CREDENTIALS')
+            return next(new restify.InvalidCredentialsError("Invalid username or password"))
+        }
+        if (top.password != md5(authData.basic.password)) {
+            return next(new restify.InvalidCredentialsError("Invalid username or password"))
+        }
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({code:'success', message:"Valid credentials for account: "+authData.basic.username}))
+    })
+}

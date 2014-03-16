@@ -9,6 +9,7 @@
     
     server.put('/book/:isbn', book.addBook)
     server.put('/user/:username', user.addUser)
+    server.get('/user/:username', user.getUser)
 
     server.post('/book/:isbn', function(req, res) {
         var auth = req.authorization
