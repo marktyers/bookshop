@@ -1,0 +1,13 @@
+{
+  "map": "function(doc) {
+    if (doc.type=='book') {
+      doc.categories.forEach(function(i) {
+        emit(i, doc.title);
+      })
+    }
+  }",
+  "reduce": "function(keys, values) {
+    return sum(values)
+  }"
+}
+
