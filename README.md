@@ -22,9 +22,18 @@ Uses the following packages:
 
 restify
 request
+q
+chai
+chai-as-promised
+async
+merge
+MD5
+
+To install all the required modules:
+	$npm install
 
 Create the bookshop database:
-curl -X PUT http://127.0.0.1:5984/bookshop
+	curl -X PUT http://127.0.0.1:5984/bookshop
 
 Adding a new book:
 
