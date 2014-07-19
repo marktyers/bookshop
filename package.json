@@ -15,7 +15,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "mocha --reporter list test/chai_test.js",
+    "test": "mocha --reporter list test/user.js",
     "start": "node server.js"
   },
   "keywords": [

@@ -50,7 +50,7 @@ exports.getUser = function(req, res, next) {
 function checkAuth(req, res, next) {
     console.log("\n### AUTHENTICATING USER ###")
     var authData = req.authorization
-    console.log(authData)
+    console.log('AUTHDATA: '+JSON.stringify(authData));
     if (authData.scheme != 'Basic') {
         return next(new restify.InvalidCredentialsError("No authorization header found (Requires HTTP Basic)"))
     }

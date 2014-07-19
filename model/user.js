@@ -13,12 +13,8 @@ exports.new_account = function(params) {
     status:"pending",
     token:token,
     credentials:params,
-    beacons_of_interest:{
-      count:0,
-      beacons:[]
-    }
   };
-  console.log(record);
+  console.log('RECORD: '+JSON.stringify(record));
 
   var uri = 'http://127.0.0.1:5984/bookshop/'+params.email;
   var deferred = Q.defer();
@@ -38,35 +34,24 @@ exports.new_account = function(params) {
     return deferred.promise;
 }
 
-exports.req_pw_change = function() {
-  return 0;
-}
-
-exports.acct_validate = function(params) {
-  console.log("\nVALIDATE_ACCOUNT");
-  console.log(params);
-  var uri = 'http://127.0.0.1:5984/fyndme/'+params.email;
-  var deferred = Q.defer();
-  request({method: 'GET', uri:uri}, function (error, response, body) {
-    console.log('retrieving document');
-    var top = JSON.parse(body);
-    console.log(top);
-    if (top.error == 'not_found') {
-      deferred.reject('account does not exist');
-    } else {
-      var token = top.token;
-      var id = top._id;
-      console.log('TOKEN: '+token);
-      console.log('_ID: '+id);
-      if (token == null) {
-        deferred.reject('account already validated');
-      } else if (token != params.token) {
-        deferred.reject('invalid token');
-      } else {
-        // token is correct, need to delete it...
-
-      }
-    }
-  }
-  return deferred.promise;
+exports.check_auth = function(params) {
+	console.log("\nCHECK_AUTH");
+	params = JSON.parse(params);
+	console.log('USERNAME: '+params.basic.username);
+	console.log('PASSWORD: '+md5(params.basic.password));
+	var uri = 'http://127.0.0.1:5984/bookshop/'+params.basic.username;
+	console.log('URI: '+uri);
+	var deferred = Q.defer();
+	request({method:'GET', uri:uri}, function(error, response, body) {
+		console.log('retrieving record');
+		console.log('SUPPLD_PW: '+body.credentials.password);
+		console.log('STORED_PW: '+md5(params.basic.password));
+		//if () {
+			
+		//}
+		deferred.resolve('SORTED!!');
+	})
+	//return deferred.promise;
+	console.log('BODY: '+JSON.stringify(deferred.promise));
+	return 'credentials correct';
 }
